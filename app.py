@@ -314,8 +314,9 @@ for col, val, label, color, rating_val in [
     (k3, n_neut, "🟡 Neutral", "#ffab00", "Neutro"),
     (k4, n_ruim, "🔴 Underweight", "#ff1744", "Viés Ruim"),
 ]:
+    extra_style = "height: 176px; margin-bottom: 0;" if not rating_val else ""
     col.markdown(f"""
-    <div class="kpi-card">
+    <div class="kpi-card" style="{extra_style}">
         <p class="value" style="color: {color}">{val}</p>
         <p class="label">{label}</p>
     </div>
@@ -327,9 +328,6 @@ for col, val, label, color, rating_val in [
                 st.session_state.selected_rating = None  # Toggle off
             else:
                 st.session_state.selected_rating = rating_val
-    else:
-        # Invisible spacer to match the button height exactly
-        col.markdown("<div style='height: 42px; opacity: 0; pointer-events: none;'></div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
