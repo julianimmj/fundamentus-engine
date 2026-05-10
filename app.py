@@ -495,7 +495,15 @@ with tab_sectors:
 with tab_top15:
     st.markdown('<div class="section-title">⭐ Top 15 Promissores</div>', unsafe_allow_html=True)
 
-    promissores = df[df["Rating"] == "Promissor"].head(15) if "Rating" in df.columns else pd.DataFrame()
+    promissores = pd.DataFrame()
+    if "Rating" in df.columns and not df.empty:
+        df_sorted = df.sort_values("Score", ascending=False)
+        promissores = df_sorted[df_sorted["Rating"] == "Promissor"]
+        if len(promissores) < 15:
+            neutros = df_sorted[df_sorted["Rating"] == "Neutro"]
+            needed = 15 - len(promissores)
+            promissores = pd.concat([promissores, neutros.head(needed)])
+        promissores = promissores.head(15)
 
     if promissores.empty:
         st.info("Nenhum ativo classificado como Promissor na última análise.")
