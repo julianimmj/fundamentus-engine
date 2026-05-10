@@ -278,8 +278,10 @@ if df.empty:
     st.stop()
 
 # ─────────────────────────────────────────
-# Freshness badge
+# Freshness badge & Session State
 # ─────────────────────────────────────────
+if "selected_rating" not in st.session_state:
+    st.session_state.selected_rating = None
 ts = macro.get("timestamp", "")
 if ts:
     try:
@@ -305,11 +307,11 @@ st.markdown(
 # KPI Cards
 # ─────────────────────────────────────────
 k1, k2, k3, k4 = st.columns(4)
-for col, val, label, color in [
-    (k1, n_total, "Ativos Analisados", "#00c8ff"),
-    (k2, n_prom, "🟢 Promissores", "#00e676"),
-    (k3, n_neut, "🟡 Neutros", "#ffab00"),
-    (k4, n_ruim, "🔴 Viés Ruim", "#ff1744"),
+for col, val, label, color, rating_val in [
+    (k1, n_total, "Ativos Analisados", "#00c8ff", None),
+    (k2, n_prom, "🟢 Overweight", "#00e676", "Promissor"),
+    (k3, n_neut, "🟡 Neutral", "#ffab00", "Neutro"),
+    (k4, n_ruim, "🔴 Underweight", "#ff1744", "Viés Ruim"),
 ]:
     col.markdown(f"""
     <div class="kpi-card">
@@ -317,8 +319,70 @@ for col, val, label, color in [
         <p class="label">{label}</p>
     </div>
     """, unsafe_allow_html=True)
+    
+    if rating_val:
+        if col.button(f"🔍 Ver lista", key=f"btn_{rating_val}", use_container_width=True):
+            if st.session_state.selected_rating == rating_val:
+                st.session_state.selected_rating = None  # Toggle off
+            else:
+                st.session_state.selected_rating = rating_val
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+# ── Selected Rating Table ──
+if st.session_state.selected_rating:
+    rating_map = {
+        "Promissor": "🟢 Overweight",
+        "Neutro": "🟡 Neutral",
+        "Viés Ruim": "🔴 Underweight"
+    }
+    st.markdown(f"### Ativos Selecionados: {rating_map[st.session_state.selected_rating]}")
+    
+    selected_df = df[df["Rating"] == st.session_state.selected_rating].copy()
+    if not selected_df.empty:
+        # Sort by Score
+        selected_df = selected_df.sort_values("Score", ascending=False)
+        
+        display_cols = [
+            "Ticker", "Nome", "Tipo", "Setor", "Score",
+            "Preço", "Target Price", "Upside", "ROE", "ROIC",
+            "Margem EBITDA", "P/L", "EV/EBITDA", "Div. Yield",
+            "Dív. Líq./EBITDA", "Vol. Médio",
+            # Bank-specific
+            "NIM", "Cost/Income", "CET1 Proxy", "NPL Proxy", "P/BV",
+            "Cresc. Carteira", "PDD/Lucro"
+        ]
+        available = [c for c in display_cols if c in selected_df.columns]
+        display = selected_df[available].copy()
+
+        # Formatters
+        for col in ["Preço", "Target Price"]:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda v: f"R$ {v:,.2f}" if pd.notna(v) else "–"
+                )
+        for col in ["Upside", "ROE", "ROIC", "Margem EBITDA", "Div. Yield", "Cresc. Receita",
+                    "NIM", "Cost/Income", "CET1 Proxy", "NPL Proxy", "Cresc. Carteira"]:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda v: f"{v*100:.1f}%" if pd.notna(v) else "–"
+                )
+        for col in ["P/L", "EV/EBITDA", "Dív. Líq./EBITDA", "Score", "P/BV", "PDD/Lucro"]:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda v: f"{v:.1f}x" if pd.notna(v) else "–"
+                )
+        for col in ["Vol. Médio"]:
+            if col in display.columns:
+                display[col] = display[col].apply(
+                    lambda v: f"R$ {v/1e6:.1f}M" if pd.notna(v) and v > 0 else "–"
+                )
+
+        st.dataframe(display, use_container_width=True, hide_index=True)
+    else:
+        st.info("Nenhum ativo nesta categoria.")
+        
+    st.markdown("<hr>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────
 # Tabs
