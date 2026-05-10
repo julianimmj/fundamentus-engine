@@ -11,7 +11,7 @@
         "Minério de ferro a US$ 110.9/ton"
       ]
     },
-    "timestamp": "2026-05-10T14:44:58.219070"
+    "timestamp": "2026-05-10T18:13:00.279968"
   },
   "macro_brazil": {
     "score": 51.2,
@@ -25,7 +25,7 @@
         "Dívida Bruta/PIB: 80.1%"
       ]
     },
-    "timestamp": "2026-05-10T14:44:59.447510"
+    "timestamp": "2026-05-10T18:13:02.511087"
   },
   "sector_scores": {
     "bancos": {
@@ -39,7 +39,7 @@
       "name": "Mineração & Siderurgia"
     },
     "petroleo": {
-      "score": 55.5,
+      "score": 55.6,
       "rating": "Neutral",
       "name": "Petróleo & Gás"
     },
@@ -74,7 +74,7 @@
       "name": "Alimentos & Bebidas"
     },
     "papel_celulose": {
-      "score": 49.5,
+      "score": 49.6,
       "rating": "Neutral",
       "name": "Papel & Celulose"
     },
@@ -144,5 +144,5 @@
       "name": "BDR Energia (EUA)"
     }
   },
-  "timestamp": "2026-05-10T14:46:35.811341"
+  "timestamp": "2026-05-10T18:15:00.435327"
 }
