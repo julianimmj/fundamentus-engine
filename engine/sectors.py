@@ -167,9 +167,9 @@ def classify_sectors(sector_scores):
     """
     result = {}
     for sector_key, score in sector_scores.items():
-        if score >= 65:
+        if score >= 60:
             rating = "Overweight"
-        elif score >= 40:
+        elif score >= 42.5:
             rating = "Neutral"
         else:
             rating = "Underweight"
