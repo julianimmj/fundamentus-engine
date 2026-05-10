@@ -11,7 +11,7 @@
         "Minério de ferro a US$ 110.9/ton"
       ]
     },
-    "timestamp": "2026-05-10T08:52:19.456263"
+    "timestamp": "2026-05-10T11:53:15.164618"
   },
   "macro_brazil": {
     "score": 51.2,
@@ -25,7 +25,7 @@
         "Dívida Bruta/PIB: 80.1%"
       ]
     },
-    "timestamp": "2026-05-10T08:52:23.517880"
+    "timestamp": "2026-05-10T11:53:16.283964"
   },
   "sector_scores": {
     "bancos": {
@@ -144,5 +144,5 @@
       "name": "BDR Energia (EUA)"
     }
   },
-  "timestamp": "2026-05-10T08:52:41.380369"
+  "timestamp": "2026-05-10T11:54:13.371895"
 }
