@@ -166,9 +166,15 @@ with st.sidebar:
     st.caption("Análise Top-Down Automatizada")
     st.markdown("---")
 
-    st.subheader("🔄 Executar Análise")
+    st.subheader("🔄 Atualização de Dados")
     run_btn = st.button("▶️ Rodar Análise Completa", use_container_width=True, type="primary")
-    st.caption("Processa ~200 ativos (pode levar 10-20 min)")
+    
+    st.info(
+        "**Aviso Operacional:** A base de dados é atualizada automaticamente toda semana. "
+        "Recomendamos acionar a execução manual apenas em caso de necessidade estrita. "
+        "Os resultados consolidados mais recentes já estão disponíveis para consulta no painel.",
+        icon="ℹ️"
+    )
 
     st.markdown("---")
     st.subheader("🎯 Filtros")
