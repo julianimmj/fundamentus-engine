@@ -2,6 +2,8 @@
 bank_analysis.py — Módulo especializado para Instituições Financeiras
 Extrai métricas bancárias: NIM, Cost/Income, NPL proxy, CET1 proxy, Loan Growth.
 Projeta: carteira de crédito, NIM, provisões, PL, net income (5 anos).
+Usa dados reais do BCB OLINDA API e FDIC BankFind quando disponíveis,
+com fallback para proxies calculados via yfinance.
 """
 import logging
 import numpy as np
@@ -10,6 +12,18 @@ import yfinance as yf
 from engine.cache import get_cache
 from engine.config import TICKER_SECTOR, PROJECTION_YEARS
 from engine.company_analysis import _safe_financials, _safe_get, _compute_dividend_yield
+
+try:
+    from engine.bcb_data import fetch_bcb_regulatory, BCB_CODES
+except Exception:
+    fetch_bcb_regulatory = None
+    BCB_CODES = {}
+
+try:
+    from engine.fdic_data import fetch_fdic_regulatory, FDIC_CERTS
+except Exception:
+    fetch_fdic_regulatory = None
+    FDIC_CERTS = {}
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +82,50 @@ def fetch_bank_data(ticker, use_cache=True):
             roa = roa / 100.0
         result["roa"] = roa
 
-        # ── Bank-specific metrics from statements ──
+        # ── Bank-specific metrics from statements (proxies) ──
         bank_metrics = _compute_bank_metrics(info, income, balance)
         result.update(bank_metrics)
+
+        # ── Override with real regulatory data when available ──
+        real_data = {}
+        if fetch_bcb_regulatory and ticker in BCB_CODES:
+            real_data = fetch_bcb_regulatory(ticker, use_cache=use_cache)
+        elif fetch_fdic_regulatory and ticker in FDIC_CERTS:
+            real_data = fetch_fdic_regulatory(ticker, use_cache=use_cache)
+
+        if real_data:
+            # Override proxy values with real data
+            if "cet1_real" in real_data:
+                result["cet1_proxy"] = real_data["cet1_real"]
+                result["fonte_cet1"] = real_data.get("fonte_cet1", "Real")
+            else:
+                result["fonte_cet1"] = "Proxy"
+
+            if "npl_real" in real_data:
+                result["npl_proxy"] = real_data["npl_real"]
+                result["fonte_npl"] = real_data.get("fonte_npl", "Real")
+            else:
+                result["fonte_npl"] = "Proxy"
+
+            if "nim_real" in real_data:
+                result["nim"] = real_data["nim_real"]
+
+            if "cost_income_real" in real_data:
+                result["cost_income"] = real_data["cost_income_real"]
+
+            # Store reference date for UI transparency
+            result["dados_regulatorios_data"] = (
+                real_data.get("bcb_reference_date")
+                or real_data.get("fdic_reference_date")
+            )
+            result["dados_regulatorios_fonte"] = (
+                "BCB" if ticker in BCB_CODES else "FDIC"
+            )
+        else:
+            result["fonte_cet1"] = "Proxy"
+            result["fonte_npl"] = "Proxy"
+            result["dados_regulatorios_fonte"] = "Proxy"
+            result["dados_regulatorios_data"] = None
 
         # ── Price history for momentum ──
         hist = stock.history(period="1y", interval="1d")

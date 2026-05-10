@@ -129,6 +129,11 @@ def _process_single_ticker(ticker, macro_global, macro_brazil, sector_scores, us
             row["P/BV"] = company.get("pb_ratio")
             row["Cresc. Carteira"] = company.get("loan_growth")
             row["PDD/Lucro"] = company.get("pdd_lucro")
+            # Data source transparency
+            row["Fonte CET1"] = company.get("fonte_cet1", "Proxy")
+            row["Fonte NPL"] = company.get("fonte_npl", "Proxy")
+            row["Dados Ref."] = company.get("dados_regulatorios_data")
+            row["Dados Fonte"] = company.get("dados_regulatorios_fonte", "Proxy")
 
         return row
 

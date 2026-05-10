@@ -46,8 +46,14 @@ PROJECTION_YEARS = 5
 # ─────────────────────────────────────────────────────────────
 BANK_PEERS = ["ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "SANB11.SA", "BPAC11.SA"]
 BANK_SECTORS = {"bancos", "seguros"}  # Sectors treated as financial institutions
-# Tickers in 'bancos' sector that are NOT banks (exchanges, fintechs, etc.)
-BANK_EXCLUSIONS = {"B3SA3.SA", "CIEL3.SA"}
+# Tickers in financial sectors that are NOT banks (exchanges, fintechs, processors)
+BANK_EXCLUSIONS = {
+    "B3SA3.SA",    # Bolsa de valores - infraestrutura de mercado
+    "CIEL3.SA",    # Processadora de pagamentos
+    "VISA34.SA",   # Fintech/processadora - sem carteira de crédito
+    "PYPL34.SA",   # Fintech - sem carteira de crédito
+    "MSCD34.SA",   # Mastercard - processadora de pagamentos
+}
 
 # ─────────────────────────────────────────────────────────────
 # Setores e Classificação

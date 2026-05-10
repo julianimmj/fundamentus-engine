@@ -584,6 +584,12 @@ with tab_full:
     if filtered.empty:
         st.info("Nenhum ativo encontrado com os filtros selecionados.")
     else:
+        # Check if any banks are in the filtered data
+        has_banks = (
+            "Tipo" in filtered.columns
+            and "Banco" in filtered["Tipo"].values
+        )
+
         # Format display
         display_cols = [
             "Ticker", "Nome", "Tipo", "Setor", "Rating", "Score",
@@ -593,9 +599,25 @@ with tab_full:
             # Bank-specific
             "NIM", "Cost/Income", "CET1 Proxy", "NPL Proxy", "P/BV",
             "Cresc. Carteira", "PDD/Lucro",
+            "Fonte CET1", "Fonte NPL", "Dados Ref.",
         ]
         available = [c for c in display_cols if c in filtered.columns]
         display = filtered[available].copy()
+
+        # Show data source note for banks
+        if has_banks and "Dados Ref." in display.columns:
+            ref_dates = display["Dados Ref."].dropna().unique()
+            fontes = []
+            if "Fonte CET1" in display.columns:
+                fontes = [f for f in display["Fonte CET1"].dropna().unique() if f != "Proxy"]
+            if fontes:
+                fonte_str = " · ".join(sorted(set(fontes)))
+                date_str = " · ".join([str(d) for d in ref_dates if d]) or "N/D"
+                st.info(
+                    f"🏛️ **Dados Regulatórios Reais** — Fonte: **{fonte_str}** · "
+                    f"Referência: **{date_str}** *(dados trimestrais com ~45 dias de defasagem)*. "
+                    f"Bancos sem cobertura usam proxies calculados (📊 Proxy)."
+                )
 
         # Format numbers
         for col in ["Preço", "Target Price"]:
