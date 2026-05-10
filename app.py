@@ -518,6 +518,9 @@ with tab_top15:
             price_str = f"R$ {price:,.2f}" if pd.notna(price) else "N/A"
             roe = row.get("ROE")
             roe_str = f"{roe*100:.1f}%" if pd.notna(roe) else "N/A"
+            rating = row.get("Rating", "Promissor")
+            
+            card_color = "#00e676" if rating == "Promissor" else "#ffab00"
 
             justification = []
             if pd.notna(upside) and upside > 0.3:
@@ -536,7 +539,7 @@ with tab_top15:
             <div class="top-card">
                 <span class="ticker">{row.get('Ticker', '')}</span>
                 <span class="name" style="margin-left: 12px;">{row.get('Nome', '')}</span>
-                <span style="float: right; color: #00e676; font-weight: 700;">
+                <span style="float: right; color: {card_color}; font-weight: 700;">
                     Score {score:.0f} · Upside {upside_str}
                 </span>
                 <div class="metrics">
