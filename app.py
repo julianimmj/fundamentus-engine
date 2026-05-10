@@ -175,8 +175,8 @@ with st.sidebar:
     )
     filter_type = st.multiselect(
         "Tipo de Ativo",
-        ["Ação", "BDR", "FII"],
-        default=["Ação", "BDR", "FII"],
+        ["Ação", "Banco", "BDR", "FII"],
+        default=["Ação", "Banco", "BDR", "FII"],
     )
 
     st.markdown("---")
@@ -492,6 +492,9 @@ with tab_full:
             "Preço", "Target Price", "Upside", "ROE", "ROIC",
             "Margem EBITDA", "P/L", "EV/EBITDA", "Div. Yield",
             "Dív. Líq./EBITDA", "Vol. Médio",
+            # Bank-specific
+            "NIM", "Cost/Income", "CET1 Proxy", "NPL Proxy", "P/BV",
+            "Cresc. Carteira", "PDD/Lucro",
         ]
         available = [c for c in display_cols if c in filtered.columns]
         display = filtered[available].copy()
@@ -502,7 +505,8 @@ with tab_full:
                 display[col] = display[col].apply(
                     lambda v: f"R$ {v:,.2f}" if pd.notna(v) else "–"
                 )
-        for col in ["Upside", "ROE", "ROIC", "Margem EBITDA", "Div. Yield", "Cresc. Receita"]:
+        for col in ["Upside", "ROE", "ROIC", "Margem EBITDA", "Div. Yield", "Cresc. Receita",
+                    "NIM", "Cost/Income", "CET1 Proxy", "NPL Proxy", "Cresc. Carteira"]:
             if col in display.columns:
                 display[col] = display[col].apply(
                     lambda v: f"{v*100:.1f}%" if pd.notna(v) else "–"

@@ -42,6 +42,14 @@ TAX_RATE_BR = 0.34           # Alíquota efetiva IR+CSLL Brasil
 PROJECTION_YEARS = 5
 
 # ─────────────────────────────────────────────────────────────
+# Bank-specific Constants
+# ─────────────────────────────────────────────────────────────
+BANK_PEERS = ["ITUB4.SA", "BBDC4.SA", "BBAS3.SA", "SANB11.SA", "BPAC11.SA"]
+BANK_SECTORS = {"bancos", "seguros"}  # Sectors treated as financial institutions
+# Tickers in 'bancos' sector that are NOT banks (exchanges, fintechs, etc.)
+BANK_EXCLUSIONS = {"B3SA3.SA", "CIEL3.SA"}
+
+# ─────────────────────────────────────────────────────────────
 # Setores e Classificação
 # ─────────────────────────────────────────────────────────────
 SECTORS = {
@@ -146,7 +154,9 @@ TICKER_SECTOR = {
     # ── Bancos & Financeiro ──
     "ITUB4.SA": "bancos", "BBDC4.SA": "bancos", "BBAS3.SA": "bancos",
     "SANB11.SA": "bancos", "BPAC11.SA": "bancos", "ITSA4.SA": "bancos",
-    "B3SA3.SA": "bancos", "BBDC3.SA": "bancos",
+    "BBDC3.SA": "bancos",
+    # ── Mercado de Capitais (não é banco) ──
+    "B3SA3.SA": "industrial",
     "ITUB3.SA": "bancos", "ABCB4.SA": "bancos", "BRSR6.SA": "bancos",
     "BMGB4.SA": "bancos",
     # ── Mineração & Siderurgia ──
@@ -320,10 +330,23 @@ def get_sector_name(sector_key):
     return SECTORS.get(sector_key, {}).get("name", sector_key)
 
 def get_ticker_type(ticker):
-    """Return 'FII', 'BDR', or 'Ação' for a ticker."""
+    """Return 'FII', 'BDR', 'Banco', or 'Ação' for a ticker."""
     s = TICKER_SECTOR.get(ticker, "")
     if s == "fii":
         return "FII"
     if s.startswith("bdr_"):
         return "BDR"
+    if is_financial_institution(ticker):
+        return "Banco"
     return "Ação"
+
+def is_financial_institution(ticker):
+    """Detect if ticker is a bank/financial institution.
+    
+    Auto-detects based on sector classification, with exclusions
+    for non-bank entities in the financial sector (e.g. B3, Cielo).
+    """
+    if ticker in BANK_EXCLUSIONS:
+        return False
+    sector = TICKER_SECTOR.get(ticker, "")
+    return sector in BANK_SECTORS

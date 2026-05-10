@@ -6,7 +6,7 @@ import logging
 import time
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from engine.config import get_all_tickers, get_ticker_type, TICKER_SECTOR
+from engine.config import get_all_tickers, get_ticker_type, TICKER_SECTOR, is_financial_institution
 from engine.cache import get_cache
 from engine.macro_global import fetch_global_macro
 from engine.macro_brazil import fetch_brazil_macro
@@ -17,6 +17,8 @@ from engine.sectors import (
 from engine.company_analysis import fetch_company_data
 from engine.valuation import run_valuation
 from engine.fii_analysis import analyze_fii, score_fii
+from engine.bank_analysis import fetch_bank_data
+from engine.bank_valuation import run_bank_valuation
 from engine.scoring import compute_composite_score, classify_asset
 
 logger = logging.getLogger(__name__)
@@ -29,26 +31,28 @@ def _process_single_ticker(ticker, macro_global, macro_brazil, sector_scores, us
         ticker_type = get_ticker_type(ticker)
         sector_key = TICKER_SECTOR.get(ticker, "outros")
         is_fii = sector_key == "fii"
+        is_bank = is_financial_institution(ticker)
 
-        # ── Fetch data ──
+        # ── Fetch data (3 pipelines: FII / Bank / Generic) ──
+        fii_sc = None
         if is_fii:
             company = analyze_fii(ticker, macro_brazil, use_cache=use_cache)
             fii_sc = score_fii(company, macro_brazil)
+        elif is_bank:
+            company = fetch_bank_data(ticker, use_cache=use_cache)
         else:
             company = fetch_company_data(ticker, use_cache=use_cache)
-            fii_sc = None
 
         if company.get("error") and not company.get("current_price"):
             return None
 
-        # ── Valuation (skip for FIIs — use FII-specific scoring) ──
+        # ── Valuation (3 pipelines) ──
         if is_fii:
             valuation = {
                 "target_price": None,
                 "upside": None,
                 "method": "FII-DY",
             }
-            # For FIIs, "upside" based on P/VP discount
             p_vp = company.get("p_vp")
             if p_vp and p_vp > 0:
                 valuation["upside"] = round(1 / p_vp - 1, 4)
@@ -56,8 +60,9 @@ def _process_single_ticker(ticker, macro_global, macro_brazil, sector_scores, us
                     valuation["target_price"] = round(
                         company["current_price"] / p_vp, 2
                     )
+        elif is_bank:
+            valuation = run_bank_valuation(company, macro_global, macro_brazil)
         else:
-            # Build sector metrics for multiples comparison
             sect_met = _get_sector_medians(sector_key)
             valuation = run_valuation(company, macro_global, macro_brazil, sect_met)
 
@@ -69,7 +74,8 @@ def _process_single_ticker(ticker, macro_global, macro_brazil, sector_scores, us
         score_data = compute_composite_score(
             company, valuation, macro_global_score,
             macro_brazil_score, sector_sc,
-            is_fii=is_fii, fii_score=fii_sc
+            is_fii=is_fii, fii_score=fii_sc,
+            is_bank=is_bank
         )
 
         # ── Classification ──
@@ -113,6 +119,16 @@ def _process_single_ticker(ticker, macro_global, macro_brazil, sector_scores, us
             row["Spread CDI"] = company.get("spread_cdi")
             row["Consist. Div."] = company.get("div_consistency")
             row["Tipo FII"] = company.get("fii_type")
+
+        # Bank-specific columns
+        if is_bank:
+            row["NIM"] = company.get("nim")
+            row["Cost/Income"] = company.get("cost_income")
+            row["CET1 Proxy"] = company.get("cet1_proxy")
+            row["NPL Proxy"] = company.get("npl_proxy")
+            row["P/BV"] = company.get("pb_ratio")
+            row["Cresc. Carteira"] = company.get("loan_growth")
+            row["PDD/Lucro"] = company.get("pdd_lucro")
 
         return row
 

@@ -98,6 +98,135 @@ def compute_quality_score(company):
     return round(sum(scores) / len(scores) * 4, 1)  # Scale to 0-100
 
 
+def compute_bank_quality_score(company):
+    """
+    Score 0-100 for financial institutions.
+    Sub-components: ROE, Cost/Income, CET1, NPL, Loan Growth, NIM, DY.
+    """
+    scores = []
+
+    # ROE (0-25) — most important for banks
+    roe = company.get("roe")
+    if roe is not None:
+        if roe > 0.22:
+            s = 25
+        elif roe > 0.18:
+            s = 22
+        elif roe > 0.14:
+            s = 18
+        elif roe > 0.10:
+            s = 14
+        elif roe > 0.05:
+            s = 8
+        else:
+            s = 0
+        scores.append(s)
+    else:
+        scores.append(12)
+
+    # Cost/Income (0-20) — lower is better
+    ci = company.get("cost_income")
+    if ci is not None:
+        if ci < 0.35:
+            s = 20
+        elif ci < 0.42:
+            s = 17
+        elif ci < 0.50:
+            s = 14
+        elif ci < 0.58:
+            s = 10
+        elif ci < 0.70:
+            s = 5
+        else:
+            s = 0
+        scores.append(s)
+    else:
+        scores.append(10)
+
+    # CET1 Proxy (0-15) — higher is more resilient
+    cet1 = company.get("cet1_proxy")
+    if cet1 is not None:
+        if cet1 > 0.14:
+            s = 15
+        elif cet1 > 0.11:
+            s = 12
+        elif cet1 > 0.09:
+            s = 9
+        elif cet1 > 0.07:
+            s = 5
+        else:
+            s = 0
+        scores.append(s)
+    else:
+        scores.append(8)
+
+    # NPL Proxy (0-15) — lower is better
+    npl = company.get("npl_proxy")
+    if npl is not None:
+        if npl < 0.01:
+            s = 15
+        elif npl < 0.02:
+            s = 12
+        elif npl < 0.04:
+            s = 9
+        elif npl < 0.06:
+            s = 5
+        else:
+            s = 0
+        scores.append(s)
+    else:
+        scores.append(8)
+
+    # Loan Growth (0-10) — moderate growth is ideal
+    lg = company.get("loan_growth")
+    if lg is not None:
+        if 0.05 < lg < 0.15:
+            s = 10  # Goldilocks zone
+        elif 0.02 < lg < 0.20:
+            s = 7
+        elif lg > 0:
+            s = 4
+        else:
+            s = 0
+        scores.append(s)
+    else:
+        scores.append(5)
+
+    # NIM (0-10) — higher is better (profitability of credit)
+    nim = company.get("nim")
+    if nim is not None:
+        if nim > 0.06:
+            s = 10
+        elif nim > 0.04:
+            s = 8
+        elif nim > 0.03:
+            s = 6
+        elif nim > 0.02:
+            s = 4
+        else:
+            s = 2
+        scores.append(s)
+    else:
+        scores.append(5)
+
+    # Dividend Yield / Consistency (0-5)
+    dy = company.get("dividend_yield")
+    if dy is not None:
+        if dy > 0.08:
+            s = 5
+        elif dy > 0.05:
+            s = 4
+        elif dy > 0.03:
+            s = 3
+        else:
+            s = 1
+        scores.append(s)
+    else:
+        scores.append(2)
+
+    return round(sum(scores), 1)
+
+
 def compute_valuation_score(valuation_result):
     """
     Score 0-100 based on valuation attractiveness.
@@ -241,7 +370,8 @@ def compute_governance_score(ticker):
 
 def compute_composite_score(
     company, valuation_result, macro_global_score,
-    macro_brazil_score, sector_score, is_fii=False, fii_score=None
+    macro_brazil_score, sector_score, is_fii=False, fii_score=None,
+    is_bank=False
 ):
     """
     Compute final composite score (0-100) with weighted components.
@@ -263,9 +393,11 @@ def compute_composite_score(
         sector_score * 0.30
     )
 
-    # Quality
+    # Quality (3 pipelines: FII / Bank / Generic)
     if is_fii and fii_score is not None:
         quality_score = fii_score
+    elif is_bank:
+        quality_score = compute_bank_quality_score(company)
     else:
         quality_score = compute_quality_score(company)
 
