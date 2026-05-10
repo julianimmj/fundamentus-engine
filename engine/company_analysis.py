@@ -77,7 +77,26 @@ def fetch_company_data(ticker, use_cache=True):
         mcap = result.get("market_cap")
         rev = result.get("revenue_latest")
         ebitda = result.get("ebitda_latest")
-        if mcap and rev and rev > 0 and mcap > 0:
+
+        # Known USD reporters in B3 (VALE3, PRIO3, etc.) - need BRL conversion
+        # Approx 5.5 is used as a standard long-term average for historical financials
+        USD_REPORTERS = ["VALE3.SA", "PRIO3.SA", "RRRP3.SA", "BRAP4.SA", "BRAP3.SA", "UGPA3.SA", "CSNA3.SA", "SUZB3.SA"]
+        if ticker in USD_REPORTERS and rev and mcap and (mcap / rev > 5.0):
+            # If MCap/Rev is unusually high, financials are likely still in USD
+            correction = 5.5
+            for key in ["revenue_latest", "ebitda_latest", "net_income_latest",
+                        "operating_cashflow", "fcf", "capex", "interest_expense",
+                        "total_debt", "cash", "net_debt", "equity", "total_assets"]:
+                if result.get(key):
+                    result[key] = result[key] * correction
+            # Recompute net_debt_ebitda after scale correction
+            if result.get("net_debt") is not None and result.get("ebitda_latest"):
+                ebitda_v = result["ebitda_latest"]
+                if ebitda_v > 0:
+                    result["net_debt_ebitda"] = result["net_debt"] / ebitda_v
+            logger.info(f"{ticker}: applied USD->BRL {correction}x scale correction to financials")
+
+        elif mcap and rev and rev > 0 and mcap > 0:
             ev_revenue = mcap / rev
             # If EV/Revenue > 50, financials might be in thousands (need 1000x)
             if ev_revenue > 50 and not TICKER_SECTOR.get(ticker, "").startswith("bdr_"):

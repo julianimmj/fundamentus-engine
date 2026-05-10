@@ -183,7 +183,7 @@ def compute_dcf(company, wacc_data):
 def compute_multiples_valuation(company, sector_metrics):
     """
     Valuation via comparable multiples.
-    Uses both sector medians AND company's own historical multiples as reference.
+    For BDRs, skips EV/EBITDA (USD/BRL mismatch) and uses only P/E.
     """
     targets = []
     shares = company.get("shares_outstanding")
@@ -193,34 +193,56 @@ def compute_multiples_valuation(company, sector_metrics):
     if not shares or shares <= 0 or current_price <= 0:
         return None
 
-    # EV/EBITDA
-    ev_ebitda_median = sector_metrics.get("ev_ebitda_median")
-    ebitda = company.get("ebitda_latest")
-    if not ev_ebitda_median:
-        # Use own multiple as anchor (assume fair-valued, slight discount)
-        own_ev_ebitda = company.get("ev_ebitda")
-        if own_ev_ebitda and own_ev_ebitda > 0:
-            ev_ebitda_median = own_ev_ebitda * 0.95  # slight discount = target
+    sector = TICKER_SECTOR.get(company.get("ticker", ""), "")
+    is_bdr = sector.startswith("bdr_")
 
-    if ev_ebitda_median and ebitda and ebitda > 0:
-        implied_ev = ebitda * ev_ebitda_median
-        implied_equity = implied_ev - net_debt
-        if implied_equity > 0:
-            targets.append(("EV/EBITDA", implied_equity / shares))
+    # EV/EBITDA — SKIP for BDRs (financials in USD, price in BRL = mismatch)
+    if not is_bdr:
+        ev_ebitda_median = sector_metrics.get("ev_ebitda_median")
+        ebitda = company.get("ebitda_latest")
+        if not ev_ebitda_median:
+            own_ev_ebitda = company.get("ev_ebitda")
+            if own_ev_ebitda and own_ev_ebitda > 0:
+                ev_ebitda_median = own_ev_ebitda * 0.95
 
-    # P/E
+        if ev_ebitda_median and ebitda and ebitda > 0:
+            implied_ev = ebitda * ev_ebitda_median
+            implied_equity = implied_ev - net_debt
+            if implied_equity > 0:
+                target_eveb = implied_equity / shares
+                # Sanity: target must be between 30% and 300% of current price
+                if current_price * 0.30 < target_eveb < current_price * 3.0:
+                    targets.append(("EV/EBITDA", target_eveb))
+
+    # P/E — For BDRs: use sector benchmark PE if available; otherwise skip
+    # P/E is currency-neutral ONLY when using yfinance's own EPS (price/pe = eps in same currency)
     pe_median = sector_metrics.get("pe_median")
     net_income = company.get("net_income_latest")
     if not pe_median:
         own_pe = company.get("pe_ratio")
-        if own_pe and 0 < own_pe < 50:
-            pe_median = own_pe * 0.95
-    if pe_median and net_income and net_income > 0:
-        eps = net_income / shares
-        targets.append(("P/E", eps * pe_median))
+        if own_pe and 0 < own_pe < 60:
+            pe_median = own_pe * 0.95  # slight discount = target
+
+    if is_bdr:
+        # For BDRs: use yfinance P/E directly (price/eps already in BRL units)
+        own_pe = company.get("pe_ratio")
+        if own_pe and 0 < own_pe < 80:
+            # Target = current price × (sector_pe / own_pe), capped at ±30%
+            if pe_median and pe_median > 0:
+                rerating = pe_median / own_pe
+                rerating = max(0.70, min(1.30, rerating))  # clamp rerating
+                targets.append(("P/E", current_price * rerating))
+            else:
+                # No sector median: BDR is assumed fairly valued
+                targets.append(("P/E", current_price * 0.97))  # slight discount
+    else:
+        if pe_median and net_income and net_income > 0:
+            eps = net_income / shares
+            pe_target = eps * pe_median
+            if current_price * 0.30 < pe_target < current_price * 3.0:
+                targets.append(("P/E", pe_target))
 
     # P/BV — only for financials where BV is meaningful
-    sector = TICKER_SECTOR.get(company.get("ticker", ""), "")
     if sector in ("bancos", "seguros"):
         pb = company.get("pb_ratio")
         equity = company.get("equity")
@@ -231,7 +253,7 @@ def compute_multiples_valuation(company, sector_metrics):
     if not targets:
         return None
 
-    # Weighted average (EV/EBITDA gets more weight as it's more reliable)
+    # Weighted average
     weighted_target = 0
     total_w = 0
     mult_weights = {"EV/EBITDA": 0.45, "P/E": 0.35, "P/BV": 0.20}
@@ -335,17 +357,21 @@ def compute_final_target(company, dcf_result, multiples_result, wacc_data=None):
             weights.append(0.45)
             method_parts.append("Mult")
 
-    # ── DDM (only for DY > 4%, capped at 1.3x current) ──
+    # ── DDM (only for DY > 4%, profitable, real dividend history) ──
     dy = company.get("dividend_yield")
-    if dy and dy > 0.04 and current > 0:
+    net_income_chk = company.get("net_income_latest", 0) or 0
+    div_rate = company.get("dividend_rate") or 0
+    # Strict: require DY > 4%, company profitable, and actual dividend payment
+    if dy and dy > 0.04 and current > 0 and net_income_chk > 0 and div_rate > 0:
         ke = wacc_data["ke"] if wacc_data else 0.15
-        # Conservative growth for dividends: inflation + slight real growth
         g = 0.035
         if ke > g + 0.02:
             dividend = current * dy
             ddm_target = dividend * (1 + g) / (ke - g)
-            # Cap DDM at 1.3x current price
+            # Cap DDM: no more than 1.3x current (high DY != infinite value)
             ddm_target = min(ddm_target, current * 1.3)
+            # Floor: DDM shouldn't crater below 0.7x
+            ddm_target = max(ddm_target, current * 0.70)
             if ddm_target > 0:
                 targets.append(ddm_target)
                 weights.append(0.20)

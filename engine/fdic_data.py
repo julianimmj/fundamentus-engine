@@ -97,20 +97,20 @@ def fetch_fdic_regulatory(ticker: str, use_cache: bool = True) -> dict:
         #   REPDTE  = Report date (YYYYMMDD)
         params = {
             "filters": f"REPDTE%3A{report_date}%20AND%20CERT%3A{cert}",
-            "fields": "CERT,REPDTE,RBCT1,DRNPASTM",
+            "fields": "CERT,REPDTE,IDT1CER",
             "limit": 1,
             "sort_by": "REPDTE",
             "sort_order": "DESC",
             "output": "json",
         }
-        url = f"{_FDIC_BASE}?filters=REPDTE:{report_date}%20AND%20CERT:{cert}&fields=CERT,REPDTE,RBCT1,DRNPASTM&limit=1&output=json"
+        url = f"{_FDIC_BASE}?filters=REPDTE:{report_date}%20AND%20CERT:{cert}&fields=CERT,REPDTE,IDT1CER&limit=1&output=json"
         resp = requests.get(url, timeout=_TIMEOUT)
         resp.raise_for_status()
         data = resp.json().get("data", [])
 
         if not data:
             # Try without specific date (get latest available)
-            url2 = f"{_FDIC_BASE}?filters=CERT:{cert}&fields=CERT,REPDTE,RBCT1,DRNPASTM&limit=1&sort_by=REPDTE&sort_order=DESC&output=json"
+            url2 = f"{_FDIC_BASE}?filters=CERT:{cert}&fields=CERT,REPDTE,IDT1CER&limit=1&sort_by=REPDTE&sort_order=DESC&output=json"
             resp2 = requests.get(url2, timeout=_TIMEOUT)
             resp2.raise_for_status()
             data = resp2.json().get("data", [])
@@ -125,7 +125,7 @@ def fetch_fdic_regulatory(ticker: str, use_cache: bool = True) -> dict:
                 ref_display = ref_date
 
             # Tier 1 Capital Ratio → CET1 proxy (FDIC returns as percent)
-            rbct1 = row.get("RBCT1")
+            rbct1 = row.get("IDT1CER")
             if rbct1 is not None:
                 result["cet1_real"] = round(float(rbct1) / 100.0, 4)
                 result["fonte_cet1"] = "FDIC"
