@@ -49,6 +49,10 @@ def analyze_fii(ticker, macro_brazil=None, use_cache=True):
 
         # ── Dividend Yield (trailing 12m) ──
         dy = info.get("dividendYield")
+        # yfinance returns DY as percent for .SA (e.g. 15.71 = 15.71%)
+        # Normalize to decimal (0-1)
+        if dy is not None and abs(dy) > 1.0:
+            dy = dy / 100.0
         result["dividend_yield"] = dy
 
         # ── Dividends history for consistency ──
