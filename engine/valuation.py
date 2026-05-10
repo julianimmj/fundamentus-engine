@@ -396,10 +396,9 @@ def compute_final_target(company, dcf_result, multiples_result, wacc_data=None):
 
     upside = (final_tp / current - 1)
 
-    # ── Clamp: sell-side target range is typically ±50% ──
-    if abs(upside) > 0.50:
-        upside = np.sign(upside) * 0.50
-        final_tp = current * (1 + upside)
+    # ── No artificial clamp: allow mathematical upside up to sanity limits ──
+    # The models already filter targets > 3.0x or < 0.3x current price, 
+    # so we don't need a hard 50% cap here.
 
     method_str = " + ".join(
         f"{mp}({int(w/total_w*100)}%)" for mp, w in zip(method_parts, weights)

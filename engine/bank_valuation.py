@@ -428,10 +428,8 @@ def run_bank_valuation(bank_data, macro_global, macro_brazil):
 
     upside = final_tp / current - 1
 
-    # Clamp at ±50%
-    if abs(upside) > 0.50:
-        upside = np.sign(upside) * 0.50
-        final_tp = current * (1 + upside)
+    # ── No artificial clamp: allow mathematical upside up to sanity limits ──
+    # The bank models already filter targets > 5.0x or < 0.2x current price.
 
     method_str = " + ".join(
         f"{name}({int(w / total_w * 100)}%)" for name, _, w in models
