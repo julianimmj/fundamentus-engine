@@ -1,7 +1,7 @@
-data/
 __pycache__/
 *.pyc
 .env
 .venv/
 *.db
 *.sqlite
+diag.py

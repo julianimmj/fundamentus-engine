@@ -1,0 +1,148 @@
+{
+  "macro_global": {
+    "score": 76.5,
+    "summary": {
+      "outlook": "🟢 Ambiente global FAVORÁVEL para ativos brasileiros",
+      "details": [
+        "VIX em 17.2 — nível baixo (risk-on)",
+        "Treasury 10Y em 4.36%",
+        "Dólar Index (DXY) estável (+0.2% 3m)",
+        "Brent a US$ 101.3/bbl",
+        "Minério de ferro a US$ 110.9/ton"
+      ]
+    },
+    "timestamp": "2026-05-10T08:52:19.456263"
+  },
+  "macro_brazil": {
+    "score": 51.2,
+    "summary": {
+      "outlook": "🟡 Macro Brasil NEUTRO",
+      "details": [
+        "Selic Meta: 14.50% a.a.",
+        "IPCA 12m acum: 4.14%",
+        "USD/BRL: R$ 4.89",
+        "IBOV: 184,108 pts",
+        "Dívida Bruta/PIB: 80.1%"
+      ]
+    },
+    "timestamp": "2026-05-10T08:52:23.517880"
+  },
+  "sector_scores": {
+    "bancos": {
+      "score": 59.3,
+      "rating": "Neutral",
+      "name": "Bancos & Financeiro"
+    },
+    "mineracao": {
+      "score": 56.2,
+      "rating": "Neutral",
+      "name": "Mineração & Siderurgia"
+    },
+    "petroleo": {
+      "score": 55.6,
+      "rating": "Neutral",
+      "name": "Petróleo & Gás"
+    },
+    "utilities": {
+      "score": 44.3,
+      "rating": "Neutral",
+      "name": "Utilities (Energia)"
+    },
+    "varejo": {
+      "score": 42.0,
+      "rating": "Neutral",
+      "name": "Varejo & Consumo"
+    },
+    "saude": {
+      "score": 45.8,
+      "rating": "Neutral",
+      "name": "Saúde"
+    },
+    "tech": {
+      "score": 40.6,
+      "rating": "Neutral",
+      "name": "Tecnologia & Software"
+    },
+    "imobiliario": {
+      "score": 42.2,
+      "rating": "Neutral",
+      "name": "Imobiliário & Construção"
+    },
+    "alimentos": {
+      "score": 52.3,
+      "rating": "Neutral",
+      "name": "Alimentos & Bebidas"
+    },
+    "papel_celulose": {
+      "score": 49.6,
+      "rating": "Neutral",
+      "name": "Papel & Celulose"
+    },
+    "seguros": {
+      "score": 41.5,
+      "rating": "Neutral",
+      "name": "Seguros & Previdência"
+    },
+    "transporte": {
+      "score": 51.6,
+      "rating": "Neutral",
+      "name": "Transporte & Logística"
+    },
+    "telecom": {
+      "score": 46.6,
+      "rating": "Neutral",
+      "name": "Telecomunicações"
+    },
+    "saneamento": {
+      "score": 43.1,
+      "rating": "Neutral",
+      "name": "Saneamento"
+    },
+    "agro": {
+      "score": 53.2,
+      "rating": "Neutral",
+      "name": "Agronegócio"
+    },
+    "industrial": {
+      "score": 51.6,
+      "rating": "Neutral",
+      "name": "Bens Industriais"
+    },
+    "fii": {
+      "score": 37.9,
+      "rating": "Underweight",
+      "name": "Fundos Imobiliários"
+    },
+    "bdr_tech": {
+      "score": 50.3,
+      "rating": "Neutral",
+      "name": "BDR Tech (EUA)"
+    },
+    "bdr_saude": {
+      "score": 52.7,
+      "rating": "Neutral",
+      "name": "BDR Saúde (EUA)"
+    },
+    "bdr_finance": {
+      "score": 49.7,
+      "rating": "Neutral",
+      "name": "BDR Financeiro (EUA)"
+    },
+    "bdr_consumo": {
+      "score": 54.2,
+      "rating": "Neutral",
+      "name": "BDR Consumo (EUA)"
+    },
+    "bdr_industrial": {
+      "score": 55.7,
+      "rating": "Neutral",
+      "name": "BDR Industrial (EUA)"
+    },
+    "bdr_energia": {
+      "score": 66.2,
+      "rating": "Overweight",
+      "name": "BDR Energia (EUA)"
+    }
+  },
+  "timestamp": "2026-05-10T08:52:41.380369"
+}
