@@ -115,6 +115,10 @@ st.markdown("""
         .hero { padding: 1.2rem 1rem !important; border-radius: 12px !important; }
         .hero h1 { font-size: 1.4rem !important; }
         .kpi-card .value { font-size: 1.8rem !important; }
+        /* Fix top-card float issues on mobile */
+        .top-card .score-upside { float: none !important; display: block; margin-top: 8px; font-size: 0.95rem; }
+        .top-card .name { display: block; margin-left: 0 !important; margin-top: 4px; }
+        .top-card .metrics { font-size: 0.75rem; line-height: 1.4; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -549,7 +553,7 @@ with tab_top15:
             <div class="top-card">
                 <span class="ticker" style="color: {card_color};">{row.get('Ticker', '')}</span>
                 <span class="name" style="margin-left: 12px;">{row.get('Nome', '')}</span>
-                <span style="float: right; color: {card_color}; font-weight: 700;">
+                <span class="score-upside" style="float: right; color: {card_color}; font-weight: 700;">
                     Score {score:.0f} · Upside {upside_str}
                 </span>
                 <div class="metrics">
