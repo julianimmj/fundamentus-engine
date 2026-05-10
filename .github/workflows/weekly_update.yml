@@ -6,6 +6,9 @@ on:
     - cron: '0 6 * * 0'
   workflow_dispatch:  # Allow manual trigger
 
+permissions:
+  contents: write
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -23,38 +26,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run full analysis
-        run: |
-          python -c "
-          import json, os
-          from pathlib import Path
-          from engine.runner import run_full_analysis
-
-          os.makedirs('data', exist_ok=True)
-          output = run_full_analysis(max_workers=6, use_cache=False)
-          df = output.get('results')
-          if df is not None and not df.empty:
-              df.to_csv('data/analysis_results.csv', index=False)
-              macro = {
-                  'macro_global': {
-                      'score': output['macro_global'].get('score'),
-                      'summary': output['macro_global'].get('summary'),
-                      'timestamp': output['macro_global'].get('timestamp'),
-                  },
-                  'macro_brazil': {
-                      'score': output['macro_brazil'].get('score'),
-                      'summary': output['macro_brazil'].get('summary'),
-                      'timestamp': output['macro_brazil'].get('timestamp'),
-                  },
-                  'sector_scores': output.get('sector_scores', {}),
-                  'timestamp': output.get('timestamp'),
-              }
-              with open('data/macro_snapshot.json', 'w') as f:
-                  json.dump(macro, f, ensure_ascii=False, indent=2, default=str)
-              print(f'Analysis complete: {len(df)} assets processed')
-          else:
-              print('ERROR: No results generated')
-              exit(1)
-          "
+        run: python run_analysis.py
 
       - name: Commit results
         run: |

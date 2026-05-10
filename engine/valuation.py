@@ -1,6 +1,14 @@
 """
 valuation.py — Camada 4b: Valuation (DCF + Múltiplos + Sensibilidade)
 Calcula Target Price via DCF com WACC detalhado + múltiplos comparáveis.
+
+v2: Fixes for realistic Brazilian market valuation:
+  - Beta floor 0.7 (yfinance returns unreliable low betas for .SA)
+  - WACC floor 10% for BR stocks (consistent with Selic + risk)
+  - Banks use equity-only Ke (deposits ≠ corporate debt)
+  - DDM uses dynamic Ke from WACC, not hardcoded
+  - Blend checks consistency between methods before averaging
+  - Upside clamped at ±60% (sell-side reports rarely exceed this)
 """
 import logging
 import numpy as np
@@ -17,62 +25,73 @@ def compute_wacc(company, macro_global, macro_brazil):
     Compute WACC (Weighted Average Cost of Capital).
     
     WACC = E/(E+D) × Ke + D/(E+D) × Kd × (1-t)
-    
     Ke = Rf + β × (ERP + CRP)
+    
+    For banks: WACC ≈ Ke (deposits are operational, not financial debt)
     """
     # Risk-free rate: US 10Y Treasury
     rf = macro_global.get("indicators", {}).get("us_10y", {})
     rf_rate = rf.get("current", 4.5) / 100 if isinstance(rf, dict) else 0.045
 
-    # Beta
-    beta = company.get("beta", 1.0) or 1.0
-    beta = max(0.3, min(3.0, beta))  # Clamp to reasonable range
+    # Beta — yfinance returns unreliable betas for .SA stocks
+    # Floor at 0.7 (no liquid BR stock has true beta < 0.7)
+    beta = company.get("beta") or 1.0
+    beta = max(0.7, min(2.5, beta))
 
     # Country Risk Premium (CDS 5Y spread proxy)
-    # Estimate from USD/BRL level if CDS not available
     usd = macro_brazil.get("indicators", {}).get("usdbrl", {})
-    usd_val = usd.get("current", 5.0) if isinstance(usd, dict) else 5.0
-    # CRP heuristic: higher USD/BRL = higher country risk
-    crp = max(0.015, min(0.06, (usd_val - 3.5) * 0.015))
+    usd_val = usd.get("current", 5.5) if isinstance(usd, dict) else 5.5
+    crp = max(0.02, min(0.06, (usd_val - 3.0) * 0.012))
 
-    # ERP (Equity Risk Premium)
     erp = ERP_DEFAULT
-
-    # Cost of Equity
     sector = TICKER_SECTOR.get(company.get("ticker", ""), "")
     is_bdr = sector.startswith("bdr_")
-    
+    is_bank = sector == "bancos"
+
+    # Cost of Equity
     if is_bdr:
-        ke = rf_rate + beta * erp  # No CRP for US companies
+        ke = rf_rate + beta * erp
     else:
         ke = rf_rate + beta * (erp + crp)
+
+    # Ensure Ke is realistic for Brazil (Selic is ~14%)
+    if not is_bdr:
+        selic = macro_brazil.get("indicators", {}).get("selic_meta", 14.5)
+        ke = max(ke, selic / 100 + 0.02)  # At minimum Selic + 2%
 
     # Cost of Debt
     interest = company.get("interest_expense")
     total_debt = company.get("total_debt")
-    if interest and total_debt and total_debt > 0:
+    if interest and total_debt and total_debt > 0 and not is_bank:
         kd = abs(interest) / total_debt
-        kd = max(0.04, min(0.25, kd))
+        kd = max(0.06, min(0.22, kd))
     else:
-        # Default: Selic + spread
-        selic = macro_brazil.get("indicators", {}).get("selic_meta", 13.75) / 100
-        kd = selic + 0.025 if not is_bdr else rf_rate + 0.02
+        selic = macro_brazil.get("indicators", {}).get("selic_meta", 14.5) / 100
+        kd = selic + 0.02 if not is_bdr else rf_rate + 0.015
 
     # Capital structure
     equity_val = company.get("market_cap") or company.get("equity")
     debt_val = total_debt or 0
 
-    if equity_val and equity_val > 0:
+    if is_bank:
+        # Banks: WACC = Ke (deposits are not financial debt for WACC purposes)
+        w_equity, w_debt = 1.0, 0.0
+    elif equity_val and equity_val > 0:
         total_capital = equity_val + debt_val
         w_equity = equity_val / total_capital
         w_debt = debt_val / total_capital
     else:
-        w_equity, w_debt = 0.7, 0.3
+        w_equity, w_debt = 0.65, 0.35
 
     tax = TAX_RATE_BR if not is_bdr else 0.21
 
     wacc = w_equity * ke + w_debt * kd * (1 - tax)
-    wacc = max(0.06, min(0.25, wacc))  # Clamp
+
+    # Floor: Brazilian equities should have WACC >= 10% given macro
+    if not is_bdr:
+        wacc = max(0.10, min(0.22, wacc))
+    else:
+        wacc = max(0.07, min(0.18, wacc))
 
     return {
         "wacc": round(wacc, 4),
@@ -101,12 +120,16 @@ def compute_dcf(company, wacc_data):
     if not fcff_list or len(fcff_list) < PROJECTION_YEARS:
         return None
 
+    # Reject if projected FCFs are negative (unprofitable companies)
+    if all(f <= 0 for f in fcff_list):
+        return None
+
     wacc = wacc_data["wacc"]
     sector = TICKER_SECTOR.get(company.get("ticker", ""), "")
     is_bdr = sector.startswith("bdr_")
     terminal_g = TERMINAL_GROWTH_US if is_bdr else TERMINAL_GROWTH_BR
 
-    # Discount FCFs
+    # Discount projected FCFs
     pv_fcfs = sum(
         fcf / (1 + wacc) ** (i + 1)
         for i, fcf in enumerate(fcff_list)
@@ -114,8 +137,15 @@ def compute_dcf(company, wacc_data):
 
     # Terminal Value (Gordon Growth Model)
     last_fcf = fcff_list[-1]
+    if last_fcf <= 0:
+        # Use last positive FCF
+        positive_fcfs = [f for f in fcff_list if f > 0]
+        last_fcf = positive_fcfs[-1] if positive_fcfs else 0
+    if last_fcf <= 0:
+        return None
+
     if wacc <= terminal_g:
-        terminal_g = wacc - 0.01
+        terminal_g = wacc - 0.02
 
     terminal_value = last_fcf * (1 + terminal_g) / (wacc - terminal_g)
     pv_terminal = terminal_value / (1 + wacc) ** PROJECTION_YEARS
@@ -126,6 +156,9 @@ def compute_dcf(company, wacc_data):
     # Equity Value
     net_debt = company.get("net_debt", 0) or 0
     equity_value = ev - net_debt
+
+    if equity_value <= 0:
+        return None
 
     # Target Price
     shares = company.get("shares_outstanding")
@@ -150,17 +183,26 @@ def compute_dcf(company, wacc_data):
 def compute_multiples_valuation(company, sector_metrics):
     """
     Valuation via comparable multiples.
-    Target price implied by sector median multiples.
+    Uses both sector medians AND company's own historical multiples as reference.
     """
     targets = []
+    shares = company.get("shares_outstanding")
+    net_debt = company.get("net_debt", 0) or 0
+    current_price = company.get("current_price", 0) or 0
+
+    if not shares or shares <= 0 or current_price <= 0:
+        return None
 
     # EV/EBITDA
     ev_ebitda_median = sector_metrics.get("ev_ebitda_median")
     ebitda = company.get("ebitda_latest")
-    net_debt = company.get("net_debt", 0) or 0
-    shares = company.get("shares_outstanding")
+    if not ev_ebitda_median:
+        # Use own multiple as anchor (assume fair-valued, slight discount)
+        own_ev_ebitda = company.get("ev_ebitda")
+        if own_ev_ebitda and own_ev_ebitda > 0:
+            ev_ebitda_median = own_ev_ebitda * 0.95  # slight discount = target
 
-    if ev_ebitda_median and ebitda and ebitda > 0 and shares and shares > 0:
+    if ev_ebitda_median and ebitda and ebitda > 0:
         implied_ev = ebitda * ev_ebitda_median
         implied_equity = implied_ev - net_debt
         if implied_equity > 0:
@@ -168,26 +210,38 @@ def compute_multiples_valuation(company, sector_metrics):
 
     # P/E
     pe_median = sector_metrics.get("pe_median")
-    eps = company.get("net_income_latest")
-    if pe_median and eps and eps > 0 and shares and shares > 0:
-        eps_per_share = eps / shares
-        targets.append(("P/E", eps_per_share * pe_median))
+    net_income = company.get("net_income_latest")
+    if not pe_median:
+        own_pe = company.get("pe_ratio")
+        if own_pe and 0 < own_pe < 50:
+            pe_median = own_pe * 0.95
+    if pe_median and net_income and net_income > 0:
+        eps = net_income / shares
+        targets.append(("P/E", eps * pe_median))
 
-    # P/BV
-    pb_median = sector_metrics.get("pb_median")
-    equity = company.get("equity")
-    if not pb_median:
-        pb_median = company.get("pb_ratio")
-    if pb_median and equity and equity > 0 and shares and shares > 0:
-        bvps = equity / shares
-        targets.append(("P/BV", bvps * pb_median))
+    # P/BV — only for financials where BV is meaningful
+    sector = TICKER_SECTOR.get(company.get("ticker", ""), "")
+    if sector in ("bancos", "seguros"):
+        pb = company.get("pb_ratio")
+        equity = company.get("equity")
+        if pb and equity and equity > 0:
+            bvps = equity / shares
+            targets.append(("P/BV", bvps * max(pb * 0.95, 1.0)))
 
     if not targets:
         return None
 
-    avg_target = np.mean([t[1] for t in targets])
-    current = company.get("current_price", 0) or 0
-    upside = (avg_target / current - 1) if current > 0 else None
+    # Weighted average (EV/EBITDA gets more weight as it's more reliable)
+    weighted_target = 0
+    total_w = 0
+    mult_weights = {"EV/EBITDA": 0.45, "P/E": 0.35, "P/BV": 0.20}
+    for name, val in targets:
+        w = mult_weights.get(name, 0.33)
+        weighted_target += val * w
+        total_w += w
+    avg_target = weighted_target / total_w if total_w > 0 else targets[0][1]
+
+    upside = (avg_target / current_price - 1) if current_price > 0 else None
 
     return {
         "multiples_details": {name: round(val, 2) for name, val in targets},
@@ -221,7 +275,7 @@ def compute_sensitivity_table(company, wacc_data):
     for w in wacc_range:
         row = []
         for g in tg_range:
-            if w <= g:
+            if w <= g + 0.01:
                 row.append(None)
                 continue
             pv = sum(f / (1 + w) ** (i + 1) for i, f in enumerate(fcff_list))
@@ -239,58 +293,96 @@ def compute_sensitivity_table(company, wacc_data):
     }
 
 
-def compute_final_target(company, dcf_result, multiples_result):
+def compute_final_target(company, dcf_result, multiples_result, wacc_data=None):
     """
-    Blended target price: 50% DCF + 30% Multiples + 20% DDM (if applicable).
+    Blended target price with data-quality and consistency checks.
+    
+    Key protections:
+    - DCF discarded if target < 30% of current price (data-quality issue)
+    - DDM capped at 1.3x current price (high DY ≠ infinite value)
+    - When methods diverge wildly, Multiples are preferred (market-anchored)
+    - Final upside capped at ±50%
     """
+    current = company.get("current_price", 0) or 0
+    if current <= 0:
+        return {"target_price": None, "upside": None, "method": "N/A"}
+
     targets = []
     weights = []
+    method_parts = []
 
+    # ── DCF (only if sanity check passes) ──
+    dcf_tp = None
     if dcf_result and dcf_result.get("target_price_dcf"):
-        tp = dcf_result["target_price_dcf"]
-        if tp > 0:
-            targets.append(tp)
-            weights.append(0.50)
+        raw_dcf = dcf_result["target_price_dcf"]
+        # Sanity: reject DCF if target < 30% of price (currency mismatch / bad data)
+        # or if target > 5x price (projection too aggressive)
+        if raw_dcf > current * 0.30 and raw_dcf < current * 5.0:
+            dcf_tp = raw_dcf
+            targets.append(dcf_tp)
+            weights.append(0.35)
+            method_parts.append("DCF")
+        else:
+            logger.debug(f"DCF discarded for {company.get('ticker')}: "
+                        f"target={raw_dcf:.2f} vs price={current:.2f}")
 
+    # ── Multiples ──
+    mult_tp = None
     if multiples_result and multiples_result.get("target_price_multiples"):
-        tp = multiples_result["target_price_multiples"]
-        if tp > 0:
-            targets.append(tp)
-            weights.append(0.30)
+        mult_tp = multiples_result["target_price_multiples"]
+        if mult_tp > 0:
+            targets.append(mult_tp)
+            weights.append(0.45)
+            method_parts.append("Mult")
 
-    # DDM (Dividend Discount Model) - simplified
+    # ── DDM (only for DY > 4%, capped at 1.3x current) ──
     dy = company.get("dividend_yield")
-    price = company.get("current_price", 0)
-    if dy and dy > 0.02 and price and price > 0:
-        # Gordon model: P = D / (Ke - g)
-        dividend = price * dy
-        ke = 0.12  # Simplified
-        g = 0.04
-        if ke > g:
-            ddm_target = dividend * 1.04 / (ke - g)
+    if dy and dy > 0.04 and current > 0:
+        ke = wacc_data["ke"] if wacc_data else 0.15
+        # Conservative growth for dividends: inflation + slight real growth
+        g = 0.035
+        if ke > g + 0.02:
+            dividend = current * dy
+            ddm_target = dividend * (1 + g) / (ke - g)
+            # Cap DDM at 1.3x current price
+            ddm_target = min(ddm_target, current * 1.3)
             if ddm_target > 0:
                 targets.append(ddm_target)
                 weights.append(0.20)
+                method_parts.append("DDM")
 
     if not targets:
         return {"target_price": None, "upside": None, "method": "N/A"}
 
-    # Normalize weights
+    # ── Consistency check: if DCF and Multiples diverge > 60%, trust Multiples ──
+    if dcf_tp and mult_tp and mult_tp > 0:
+        divergence = abs(dcf_tp - mult_tp) / mult_tp
+        if divergence > 0.60:
+            for i, mp in enumerate(method_parts):
+                if mp == "DCF":
+                    weights[i] = 0.15
+                elif mp == "Mult":
+                    weights[i] = 0.65
+
+    # Normalize weights and compute blended target
     total_w = sum(weights)
     final_tp = sum(t * w / total_w for t, w in zip(targets, weights))
 
-    current = company.get("current_price", 0) or 0
-    upside = (final_tp / current - 1) if current > 0 else None
+    upside = (final_tp / current - 1)
 
-    # Sanity check: clamp extreme values (max ±100%)
-    if upside and abs(upside) > 1.0:
-        final_tp = current * (1 + np.sign(upside) * 1.0)
-        upside = np.sign(upside) * 1.0
+    # ── Clamp: sell-side target range is typically ±50% ──
+    if abs(upside) > 0.50:
+        upside = np.sign(upside) * 0.50
+        final_tp = current * (1 + upside)
+
+    method_str = " + ".join(
+        f"{mp}({int(w/total_w*100)}%)" for mp, w in zip(method_parts, weights)
+    )
 
     return {
         "target_price": round(final_tp, 2),
-        "upside": round(upside, 4) if upside is not None else None,
-        "method": f"DCF({int(weights[0]/total_w*100)}%) + Mult({int(weights[1]/total_w*100 if len(weights)>1 else 0)}%)",
+        "upside": round(upside, 4),
+        "method": method_str,
     }
 
 
@@ -312,8 +404,8 @@ def run_valuation(company, macro_global, macro_brazil, sector_metrics=None):
     sect_met = sector_metrics or {}
     multiples_result = compute_multiples_valuation(company, sect_met)
 
-    # Final Target
-    final = compute_final_target(company, dcf_result, multiples_result)
+    # Final Target (pass wacc_data for DDM Ke)
+    final = compute_final_target(company, dcf_result, multiples_result, wacc_data)
 
     # Sensitivity
     sensitivity = compute_sensitivity_table(company, wacc_data)

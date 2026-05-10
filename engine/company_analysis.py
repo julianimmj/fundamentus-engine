@@ -72,6 +72,27 @@ def fetch_company_data(ticker, use_cache=True):
             result["ret_6m"] = float(close[-1] / close[-132] - 1) if len(close) > 132 else None
             result["ret_12m"] = float(close[-1] / close[0] - 1) if len(close) > 200 else None
 
+        # ── Currency/scale sanity check ──
+        # yfinance sometimes returns financials in different scales for .SA stocks
+        mcap = result.get("market_cap")
+        rev = result.get("revenue_latest")
+        ebitda = result.get("ebitda_latest")
+        if mcap and rev and rev > 0 and mcap > 0:
+            ev_revenue = mcap / rev
+            # If EV/Revenue > 50, financials might be in thousands (need 1000x)
+            if ev_revenue > 50 and not TICKER_SECTOR.get(ticker, "").startswith("bdr_"):
+                correction = 1000
+                for key in ["revenue_latest", "ebitda_latest", "net_income_latest",
+                            "operating_cashflow", "fcf", "capex", "interest_expense",
+                            "total_debt", "cash", "net_debt", "equity", "total_assets"]:
+                    if result.get(key):
+                        result[key] = result[key] * correction
+                if result.get("net_debt") is not None and result.get("ebitda_latest"):
+                    ebitda_v = result["ebitda_latest"]
+                    if ebitda_v > 0:
+                        result["net_debt_ebitda"] = result["net_debt"] / ebitda_v
+                logger.info(f"{ticker}: applied {correction}x scale correction to financials")
+
         # ── Projections ──
         projections = _compute_projections(result, income, balance)
         result["projections"] = projections
@@ -244,13 +265,15 @@ def _compute_projections(company, income, balance):
     if not revenue or revenue <= 0:
         return proj
 
-    # Revenue growth rate
+    # Revenue growth rate — conservative cap at 12% Y1 (sell-side consensus rarely > 15%)
     hist_cagr = company.get("revenue_cagr_3y") or company.get("revenue_growth") or 0.05
-    # Clamp to reasonable range
-    rev_growth = max(-0.10, min(0.30, hist_cagr))
-    # Fade growth toward GDP rate over projection period
-    gdp_growth = 0.06  # Nominal GDP Brasil ~6% (3% real + 3% inflation)
-    fade_rates = [rev_growth + (gdp_growth - rev_growth) * (i / PROJECTION_YEARS) for i in range(PROJECTION_YEARS)]
+    rev_growth = max(-0.05, min(0.12, hist_cagr))
+    # Fade growth toward nominal GDP over projection period (faster fade)
+    gdp_growth = 0.05  # Nominal GDP Brasil ~5% (2.5% real + 2.5% inflation target)
+    fade_rates = [
+        rev_growth + (gdp_growth - rev_growth) * ((i + 1) / PROJECTION_YEARS)
+        for i in range(PROJECTION_YEARS)
+    ]
 
     proj["revenue"] = []
     rev = revenue
