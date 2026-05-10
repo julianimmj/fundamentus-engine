@@ -497,7 +497,17 @@ with tab_top15:
 
     promissores = pd.DataFrame()
     if "Rating" in df.columns and not df.empty:
-        df_sorted = df.sort_values("Score", ascending=False)
+        # Sort by Score (1st), Upside (2nd), ROE (3rd) all descending
+        sort_cols = ["Score"]
+        asc_flags = [False]
+        if "Upside" in df.columns:
+            sort_cols.append("Upside")
+            asc_flags.append(False)
+        if "ROE" in df.columns:
+            sort_cols.append("ROE")
+            asc_flags.append(False)
+            
+        df_sorted = df.sort_values(by=sort_cols, ascending=asc_flags)
         promissores = df_sorted[df_sorted["Rating"] == "Promissor"]
         if len(promissores) < 15:
             neutros = df_sorted[df_sorted["Rating"] == "Neutro"]
