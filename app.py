@@ -537,7 +537,7 @@ with tab_top15:
 
             st.markdown(f"""
             <div class="top-card">
-                <span class="ticker">{row.get('Ticker', '')}</span>
+                <span class="ticker" style="color: {card_color};">{row.get('Ticker', '')}</span>
                 <span class="name" style="margin-left: 12px;">{row.get('Nome', '')}</span>
                 <span style="float: right; color: {card_color}; font-weight: 700;">
                     Score {score:.0f} · Upside {upside_str}
