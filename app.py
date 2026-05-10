@@ -221,10 +221,10 @@ if run_btn:
         pct = min(current / total, 1.0) if total > 0 else 0
         progress_bar.progress(pct, text=f"⏳ {msg} ({current}/{total})")
 
-    status.info(f"🔄 Analisando {len(tickers)} ativos...")
+    status.info(f"🔄 Analisando {len(tickers)} ativos... Isso pode levar 10-20 minutos.")
     output = run_full_analysis(
         tickers=tickers, max_workers=8,
-        use_cache=True, progress_callback=update_progress
+        use_cache=False, progress_callback=update_progress
     )
 
     df = output.get("results", pd.DataFrame())
