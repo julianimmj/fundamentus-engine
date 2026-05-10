@@ -6,10 +6,33 @@ import logging
 import numpy as np
 import yfinance as yf
 from engine.cache import get_cache
+import requests
+from bs4 import BeautifulSoup
 from engine.config import FII_TYPES
 
 logger = logging.getLogger(__name__)
 
+def _scrape_pvp_fundamentus(ticker):
+    """Fallback web scraper to get P/VP from Fundamentus when yfinance fails."""
+    try:
+        clean_ticker = ticker.replace(".SA", "")
+        url = f"https://www.fundamentus.com.br/detalhes.php?papel={clean_ticker}"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            spans = soup.find_all('span', class_='txt')
+            for span in spans:
+                if 'P/VP' in span.text:
+                    td = span.find_parent('td')
+                    if td:
+                        next_td = td.find_next_sibling('td')
+                        if next_td:
+                            val_str = next_td.text.strip().replace(',', '.')
+                            return float(val_str)
+    except Exception as e:
+        logger.debug(f"Scraper failed for {ticker}: {e}")
+    return None
 
 def analyze_fii(ticker, macro_brazil=None, use_cache=True):
     """
@@ -46,6 +69,10 @@ def analyze_fii(ticker, macro_brazil=None, use_cache=True):
             result["p_vp"] = round(price / nav, 4)
         else:
             result["p_vp"] = info.get("priceToBook")
+            
+        if result.get("p_vp") is None:
+            logger.info(f"yfinance missed P/VP for {ticker}, using scraper fallback.")
+            result["p_vp"] = _scrape_pvp_fundamentus(ticker)
 
         # ── Dividend Yield (trailing 12m) ──
         # Prefer dividendRate / price (always correct) over dividendYield
