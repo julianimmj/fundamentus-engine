@@ -62,6 +62,7 @@ st.markdown("""
         padding: 1.2rem 1rem; text-align: center; min-height: 110px;
         display: flex; flex-direction: column; justify-content: center; align-items: center;
         box-shadow: 0 4px 20px rgba(0,0,0,0.4); transition: all 0.3s ease;
+        margin-bottom: 12px;
     }
     .kpi-card:hover { border-color: rgba(0,200,255,0.4); transform: translateY(-2px); }
     .kpi-card .value { font-weight: 800; font-size: 2.4rem; margin: 0; line-height: 1.1; }
@@ -326,6 +327,9 @@ for col, val, label, color, rating_val in [
                 st.session_state.selected_rating = None  # Toggle off
             else:
                 st.session_state.selected_rating = rating_val
+    else:
+        # Invisible spacer to match the button height exactly
+        col.markdown("<div style='height: 42px; opacity: 0; pointer-events: none;'></div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
