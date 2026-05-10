@@ -134,6 +134,20 @@ def _safe_get(df, row_labels, col_idx=0):
     return None
 
 
+def _normalize_pct(val):
+    """Normalize percentage values from yfinance.
+    
+    yfinance is inconsistent: sometimes returns 0.0856 (decimal),
+    sometimes 8.56 (percent). We normalize to always be decimal (0-1).
+    Values > 1 are assumed to be in percent form and divided by 100.
+    """
+    if val is None:
+        return None
+    if abs(val) > 1.0:
+        return val / 100.0
+    return val
+
+
 def _compute_indicators(info, income, balance, cashflow):
     """Compute fundamental indicators from financial statements."""
     ind = {}
@@ -143,17 +157,17 @@ def _compute_indicators(info, income, balance, cashflow):
     ind["pb_ratio"] = info.get("priceToBook")
     ind["ev_ebitda"] = info.get("enterpriseToEbitda")
     ind["ev_revenue"] = info.get("enterpriseToRevenue")
-    ind["dividend_yield"] = info.get("dividendYield")
-    ind["payout_ratio"] = info.get("payoutRatio")
-    ind["roe"] = info.get("returnOnEquity")
-    ind["roa"] = info.get("returnOnAssets")
+    ind["dividend_yield"] = _normalize_pct(info.get("dividendYield"))
+    ind["payout_ratio"] = _normalize_pct(info.get("payoutRatio"))
+    ind["roe"] = _normalize_pct(info.get("returnOnEquity"))
+    ind["roa"] = _normalize_pct(info.get("returnOnAssets"))
     ind["debt_to_equity"] = info.get("debtToEquity")
     ind["current_ratio"] = info.get("currentRatio")
-    ind["revenue_growth"] = info.get("revenueGrowth")
-    ind["earnings_growth"] = info.get("earningsGrowth")
-    ind["profit_margins"] = info.get("profitMargins")
-    ind["operating_margins"] = info.get("operatingMargins")
-    ind["gross_margins"] = info.get("grossMargins")
+    ind["revenue_growth"] = _normalize_pct(info.get("revenueGrowth"))
+    ind["earnings_growth"] = _normalize_pct(info.get("earningsGrowth"))
+    ind["profit_margins"] = _normalize_pct(info.get("profitMargins"))
+    ind["operating_margins"] = _normalize_pct(info.get("operatingMargins"))
+    ind["gross_margins"] = _normalize_pct(info.get("grossMargins"))
 
     # ── From statements ──
     if income is not None and not income.empty:
