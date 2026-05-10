@@ -11,7 +11,7 @@
         "Minério de ferro a US$ 110.9/ton"
       ]
     },
-    "timestamp": "2026-05-10T13:32:40.206019"
+    "timestamp": "2026-05-10T13:42:18.163376"
   },
   "macro_brazil": {
     "score": 51.2,
@@ -25,7 +25,7 @@
         "Dívida Bruta/PIB: 80.1%"
       ]
     },
-    "timestamp": "2026-05-10T13:32:41.278682"
+    "timestamp": "2026-05-10T13:42:19.469013"
   },
   "sector_scores": {
     "bancos": {
@@ -50,7 +50,7 @@
     },
     "varejo": {
       "score": 42.0,
-      "rating": "Neutral",
+      "rating": "Underweight",
       "name": "Varejo & Consumo"
     },
     "saude": {
@@ -60,12 +60,12 @@
     },
     "tech": {
       "score": 40.6,
-      "rating": "Neutral",
+      "rating": "Underweight",
       "name": "Tecnologia & Software"
     },
     "imobiliario": {
       "score": 42.2,
-      "rating": "Neutral",
+      "rating": "Underweight",
       "name": "Imobiliário & Construção"
     },
     "alimentos": {
@@ -80,7 +80,7 @@
     },
     "seguros": {
       "score": 41.5,
-      "rating": "Neutral",
+      "rating": "Underweight",
       "name": "Seguros & Previdência"
     },
     "transporte": {
@@ -144,5 +144,5 @@
       "name": "BDR Energia (EUA)"
     }
   },
-  "timestamp": "2026-05-10T13:33:44.087119"
+  "timestamp": "2026-05-10T13:43:16.620392"
 }
