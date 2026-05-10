@@ -175,8 +175,8 @@ with st.sidebar:
 
     filter_rating = st.multiselect(
         "Rating",
-        ["Promissor", "Neutro", "Viés Ruim"],
-        default=["Promissor", "Neutro", "Viés Ruim"],
+        ["Overweight", "Neutral", "Underweight"],
+        default=["Overweight", "Neutral", "Underweight"],
     )
     filter_type = st.multiselect(
         "Tipo de Ativo",
@@ -197,9 +197,9 @@ with st.sidebar:
 | Governança (proxy) | 5% |
 
 **Classificação:**
-- 🟢 **Promissor**: Score ≥ 65, Upside > 10%, Macro +
-- 🟡 **Neutro**: Score 40-64
-- 🔴 **Viés Ruim**: Score < 40 ou Upside < -20%
+- 🟢 **Overweight**: Score ≥ 60, Upside > 10%, Macro +
+- 🟡 **Neutral**: Score 42.5-59.9
+- 🔴 **Underweight**: Score < 42.5 ou Upside < -20%
 
 **Valuation:** DCF (35%) + Múltiplos (45%) + DDM (20%)
         """)
@@ -570,7 +570,14 @@ with tab_full:
     # Apply filters
     filtered = df.copy()
     if "Rating" in filtered.columns and filter_rating:
-        filtered = filtered[filtered["Rating"].isin(filter_rating)]
+        # Map english UI labels back to dataframe values
+        rating_map_inv = {
+            "Overweight": "Promissor", 
+            "Neutral": "Neutro", 
+            "Underweight": "Viés Ruim"
+        }
+        mapped_filter = [rating_map_inv.get(r, r) for r in filter_rating]
+        filtered = filtered[filtered["Rating"].isin(mapped_filter)]
     if "Tipo" in filtered.columns and filter_type:
         filtered = filtered[filtered["Tipo"].isin(filter_type)]
 
