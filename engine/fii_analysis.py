@@ -48,12 +48,22 @@ def analyze_fii(ticker, macro_brazil=None, use_cache=True):
             result["p_vp"] = info.get("priceToBook")
 
         # ── Dividend Yield (trailing 12m) ──
-        dy = info.get("dividendYield")
-        # yfinance returns DY as percent for .SA (e.g. 15.71 = 15.71%)
-        # Normalize to decimal (0-1)
-        if dy is not None and abs(dy) > 1.0:
-            dy = dy / 100.0
-        result["dividend_yield"] = dy
+        # Prefer dividendRate / price (always correct) over dividendYield
+        rate = info.get("dividendRate")
+        if rate and price and price > 0 and rate > 0:
+            dy = rate / price
+            if dy < 0.60:
+                result["dividend_yield"] = round(dy, 6)
+            else:
+                result["dividend_yield"] = None
+        else:
+            dy = info.get("dividendYield")
+            if dy is not None and abs(dy) > 1.0:
+                dy = dy / 100.0
+            if dy and 0 < dy < 0.60:
+                result["dividend_yield"] = round(dy, 6)
+            else:
+                result["dividend_yield"] = None
 
         # ── Dividends history for consistency ──
         dividends = stock.dividends

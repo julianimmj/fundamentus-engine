@@ -135,17 +135,45 @@ def _safe_get(df, row_labels, col_idx=0):
 
 
 def _normalize_pct(val):
-    """Normalize percentage values from yfinance.
+    """Normalize percentage values from yfinance to decimal (0-1).
     
-    yfinance is inconsistent: sometimes returns 0.0856 (decimal),
-    sometimes 8.56 (percent). We normalize to always be decimal (0-1).
-    Values > 1 are assumed to be in percent form and divided by 100.
+    yfinance is inconsistent for .SA stocks: sometimes returns 0.0856 (decimal),
+    sometimes 8.56 (percent), sometimes 0.88 (ambiguous).
+    
+    Strategy: values > 1.5 are almost certainly in percent form.
+    Values 0-1.5 are kept as-is (could be decimal or very low %).
     """
     if val is None:
         return None
-    if abs(val) > 1.0:
+    if abs(val) > 1.5:
         return val / 100.0
     return val
+
+
+def _compute_dividend_yield(info):
+    """Compute dividend yield reliably from yfinance data.
+    
+    Prefers dividendRate/price (always correct) over dividendYield (inconsistent).
+    """
+    rate = info.get("dividendRate")
+    price = info.get("currentPrice") or info.get("regularMarketPrice")
+    
+    # Best method: rate / price
+    if rate and price and price > 0 and rate > 0:
+        dy = rate / price
+        # Sanity: DY should be between 0% and 60%
+        if dy < 0.60:
+            return round(dy, 6)
+    
+    # Fallback: dividendYield from yfinance (normalize if needed)
+    raw = info.get("dividendYield")
+    if raw is not None:
+        if raw > 1.0:
+            raw = raw / 100.0  # Was in percent form
+        if 0 < raw < 0.60:
+            return round(raw, 6)
+    
+    return None
 
 
 def _compute_indicators(info, income, balance, cashflow):
@@ -157,7 +185,7 @@ def _compute_indicators(info, income, balance, cashflow):
     ind["pb_ratio"] = info.get("priceToBook")
     ind["ev_ebitda"] = info.get("enterpriseToEbitda")
     ind["ev_revenue"] = info.get("enterpriseToRevenue")
-    ind["dividend_yield"] = _normalize_pct(info.get("dividendYield"))
+    ind["dividend_yield"] = _compute_dividend_yield(info)
     ind["payout_ratio"] = _normalize_pct(info.get("payoutRatio"))
     ind["roe"] = _normalize_pct(info.get("returnOnEquity"))
     ind["roa"] = _normalize_pct(info.get("returnOnAssets"))
