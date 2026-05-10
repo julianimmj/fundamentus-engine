@@ -24,12 +24,12 @@ SCORE_WEIGHTS = {
 # Classification Thresholds
 # ─────────────────────────────────────────────────────────────
 THRESHOLDS = {
-    "promissor_score": 75,
-    "promissor_upside": 0.20,
-    "neutro_min": 45,
-    "neutro_max": 74,
-    "ruim_score": 45,
-    "ruim_upside": -0.15,
+    "promissor_score": 65,
+    "promissor_upside": 0.10,
+    "neutro_min": 40,
+    "neutro_max": 64,
+    "ruim_score": 40,
+    "ruim_upside": -0.20,
 }
 
 # ─────────────────────────────────────────────────────────────

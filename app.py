@@ -192,11 +192,11 @@ with st.sidebar:
 | Governança (proxy) | 5% |
 
 **Classificação:**
-- 🟢 **Promissor**: Score ≥ 75, Upside > 20%, Macro +
-- 🟡 **Neutro**: Score 45-74
-- 🔴 **Viés Ruim**: Score < 45 ou Upside < -15%
+- 🟢 **Promissor**: Score ≥ 65, Upside > 10%, Macro +
+- 🟡 **Neutro**: Score 40-64
+- 🔴 **Viés Ruim**: Score < 40 ou Upside < -20%
 
-**Valuation:** DCF (50%) + Múltiplos (30%) + DDM (20%)
+**Valuation:** DCF (35%) + Múltiplos (45%) + DDM (20%)
         """)
 
 
