@@ -4,77 +4,77 @@
     "summary": {
       "outlook": "🟡 Ambiente global NEUTRO",
       "details": [
-        "VIX em 14.9 — nível baixo (risk-on)",
-        "Treasury 10Y em 4.66%",
-        "Dólar Index (DXY) fortalecendo (+1.1% 3m)",
-        "Brent a US$ 83.6/bbl",
-        "Minério de ferro a US$ 94.4/ton"
+        "VIX em 14.2 — nível baixo (risk-on)",
+        "Treasury 10Y em 4.70%",
+        "Dólar Index (DXY) fortalecendo (+1.4% 3m)",
+        "Brent a US$ 88.5/bbl",
+        "Minério de ferro a US$ 95.2/ton"
       ]
     },
-    "timestamp": "2026-08-09T06:33:07.252633"
+    "timestamp": "2026-08-16T06:16:43.099596"
   },
   "macro_brazil": {
-    "score": 34.1,
+    "score": 38.8,
     "summary": {
       "outlook": "🔴 Macro Brasil DESFAVORÁVEL — postura defensiva",
       "details": [
         "Selic Meta: 14.00% a.a.",
-        "IPCA 12m acum: 4.64%",
-        "USD/BRL: R$ 5.08",
-        "IBOV: 172,513 pts",
+        "IPCA 12m acum: 4.44%",
+        "USD/BRL: R$ 5.21",
+        "IBOV: 166,934 pts",
         "Dívida Bruta/PIB: 81.9%"
       ]
     },
-    "timestamp": "2026-08-09T06:34:08.359452"
+    "timestamp": "2026-08-16T06:17:55.502819"
   },
   "sector_scores": {
     "bancos": {
-      "score": 53.5,
+      "score": 53.6,
       "rating": "Neutral",
       "name": "Bancos & Financeiro"
     },
     "mineracao": {
-      "score": 35.9,
+      "score": 35.6,
       "rating": "Underweight",
       "name": "Mineração & Siderurgia"
     },
     "petroleo": {
-      "score": 36.3,
+      "score": 35.9,
       "rating": "Underweight",
       "name": "Petróleo & Gás"
     },
     "utilities": {
-      "score": 35.5,
+      "score": 35.6,
       "rating": "Underweight",
       "name": "Utilities (Energia)"
     },
     "varejo": {
-      "score": 32.1,
+      "score": 32.3,
       "rating": "Underweight",
       "name": "Varejo & Consumo"
     },
     "saude": {
-      "score": 40.0,
+      "score": 40.1,
       "rating": "Underweight",
       "name": "Saúde"
     },
     "tech": {
-      "score": 36.2,
+      "score": 36.3,
       "rating": "Underweight",
       "name": "Tecnologia & Software"
     },
     "imobiliario": {
-      "score": 31.3,
+      "score": 31.4,
       "rating": "Underweight",
       "name": "Imobiliário & Construção"
     },
     "alimentos": {
-      "score": 37.1,
+      "score": 36.8,
       "rating": "Underweight",
       "name": "Alimentos & Bebidas"
     },
     "papel_celulose": {
-      "score": 39.3,
+      "score": 38.9,
       "rating": "Underweight",
       "name": "Papel & Celulose"
     },
@@ -84,12 +84,12 @@
       "name": "Seguros & Previdência"
     },
     "transporte": {
-      "score": 34.8,
+      "score": 35.0,
       "rating": "Underweight",
       "name": "Transporte & Logística"
     },
     "telecom": {
-      "score": 42.2,
+      "score": 42.3,
       "rating": "Underweight",
       "name": "Telecomunicações"
     },
@@ -99,12 +99,12 @@
       "name": "Saneamento"
     },
     "agro": {
-      "score": 35.9,
+      "score": 35.6,
       "rating": "Underweight",
       "name": "Agronegócio"
     },
     "industrial": {
-      "score": 34.8,
+      "score": 35.0,
       "rating": "Underweight",
       "name": "Bens Industriais"
     },
@@ -114,35 +114,35 @@
       "name": "Fundos Imobiliários"
     },
     "bdr_tech": {
-      "score": 48.3,
+      "score": 47.9,
       "rating": "Neutral",
       "name": "BDR Tech (EUA)"
     },
     "bdr_saude": {
-      "score": 51.7,
+      "score": 51.2,
       "rating": "Neutral",
       "name": "BDR Saúde (EUA)"
     },
     "bdr_finance": {
-      "score": 48.7,
+      "score": 48.2,
       "rating": "Neutral",
       "name": "BDR Financeiro (EUA)"
     },
     "bdr_consumo": {
-      "score": 50.2,
+      "score": 49.7,
       "rating": "Neutral",
       "name": "BDR Consumo (EUA)"
     },
     "bdr_industrial": {
-      "score": 48.7,
+      "score": 48.2,
       "rating": "Neutral",
       "name": "BDR Industrial (EUA)"
     },
     "bdr_energia": {
-      "score": 44.2,
+      "score": 43.7,
       "rating": "Neutral",
       "name": "BDR Energia (EUA)"
     }
   },
-  "timestamp": "2026-08-09T06:35:42.685447"
+  "timestamp": "2026-08-16T06:19:23.715380"
 }
