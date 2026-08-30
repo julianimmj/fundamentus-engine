@@ -1,148 +1,148 @@
 {
   "macro_global": {
-    "score": 57.1,
+    "score": 60.8,
     "summary": {
       "outlook": "🟡 Ambiente global NEUTRO",
       "details": [
-        "VIX em 15.1 — nível baixo (risk-on)",
-        "Treasury 10Y em 4.74%",
-        "Dólar Index (DXY) estável (-0.5% 3m)",
-        "Brent a US$ 94.4/bbl",
-        "Minério de ferro a US$ 95.2/ton"
+        "VIX em 14.4 — nível baixo (risk-on)",
+        "Treasury 10Y em 4.72%",
+        "Dólar Index (DXY) estável (+0.5% 3m)",
+        "Brent a US$ 88.1/bbl",
+        "Minério de ferro a US$ 95.8/ton"
       ]
     },
-    "timestamp": "2026-08-23T06:17:44.792723"
+    "timestamp": "2026-08-30T10:45:23.523603"
   },
   "macro_brazil": {
-    "score": 38.8,
+    "score": 42.4,
     "summary": {
       "outlook": "🔴 Macro Brasil DESFAVORÁVEL — postura defensiva",
       "details": [
         "Selic Meta: 14.00% a.a.",
         "IPCA 12m acum: 4.44%",
-        "USD/BRL: R$ 5.14",
-        "IBOV: 171,032 pts",
+        "USD/BRL: R$ 5.21",
+        "IBOV: 175,665 pts",
         "Dívida Bruta/PIB: 81.9%"
       ]
     },
-    "timestamp": "2026-08-23T06:17:47.965974"
+    "timestamp": "2026-08-30T10:45:25.184488"
   },
   "sector_scores": {
     "bancos": {
-      "score": 53.8,
+      "score": 53.5,
       "rating": "Neutral",
       "name": "Bancos & Financeiro"
     },
     "mineracao": {
-      "score": 35.0,
+      "score": 35.8,
       "rating": "Underweight",
       "name": "Mineração & Siderurgia"
     },
     "petroleo": {
-      "score": 35.3,
+      "score": 36.1,
       "rating": "Underweight",
       "name": "Petróleo & Gás"
     },
     "utilities": {
-      "score": 35.8,
+      "score": 35.5,
       "rating": "Underweight",
       "name": "Utilities (Energia)"
     },
     "varejo": {
-      "score": 32.6,
+      "score": 32.2,
       "rating": "Underweight",
       "name": "Varejo & Consumo"
     },
     "saude": {
-      "score": 40.3,
+      "score": 40.0,
       "rating": "Underweight",
       "name": "Saúde"
     },
     "tech": {
-      "score": 36.6,
+      "score": 36.3,
       "rating": "Underweight",
       "name": "Tecnologia & Software"
     },
     "imobiliario": {
-      "score": 31.6,
+      "score": 31.3,
       "rating": "Underweight",
       "name": "Imobiliário & Construção"
     },
     "alimentos": {
-      "score": 36.3,
+      "score": 37.0,
       "rating": "Underweight",
       "name": "Alimentos & Bebidas"
     },
     "papel_celulose": {
-      "score": 38.3,
+      "score": 39.1,
       "rating": "Underweight",
       "name": "Papel & Celulose"
     },
     "seguros": {
-      "score": 38.3,
+      "score": 38.1,
       "rating": "Underweight",
       "name": "Seguros & Previdência"
     },
     "transporte": {
-      "score": 35.4,
+      "score": 34.9,
       "rating": "Underweight",
       "name": "Transporte & Logística"
     },
     "telecom": {
-      "score": 42.6,
-      "rating": "Neutral",
+      "score": 42.3,
+      "rating": "Underweight",
       "name": "Telecomunicações"
     },
     "saneamento": {
-      "score": 39.3,
+      "score": 39.2,
       "rating": "Underweight",
       "name": "Saneamento"
     },
     "agro": {
-      "score": 35.0,
+      "score": 35.8,
       "rating": "Underweight",
       "name": "Agronegócio"
     },
     "industrial": {
-      "score": 35.4,
+      "score": 34.9,
       "rating": "Underweight",
       "name": "Bens Industriais"
     },
     "fii": {
-      "score": 35.5,
+      "score": 35.4,
       "rating": "Underweight",
       "name": "Fundos Imobiliários"
     },
     "bdr_tech": {
-      "score": 38.2,
-      "rating": "Underweight",
+      "score": 46.3,
+      "rating": "Neutral",
       "name": "BDR Tech (EUA)"
     },
     "bdr_saude": {
-      "score": 41.4,
-      "rating": "Underweight",
+      "score": 49.6,
+      "rating": "Neutral",
       "name": "BDR Saúde (EUA)"
     },
     "bdr_finance": {
-      "score": 38.4,
-      "rating": "Underweight",
+      "score": 46.6,
+      "rating": "Neutral",
       "name": "BDR Financeiro (EUA)"
     },
     "bdr_consumo": {
-      "score": 39.9,
-      "rating": "Underweight",
+      "score": 48.1,
+      "rating": "Neutral",
       "name": "BDR Consumo (EUA)"
     },
     "bdr_industrial": {
-      "score": 38.4,
-      "rating": "Underweight",
+      "score": 46.6,
+      "rating": "Neutral",
       "name": "BDR Industrial (EUA)"
     },
     "bdr_energia": {
-      "score": 33.9,
+      "score": 42.1,
       "rating": "Underweight",
       "name": "BDR Energia (EUA)"
     }
   },
-  "timestamp": "2026-08-23T06:19:43.008509"
+  "timestamp": "2026-08-30T10:47:13.926021"
 }
